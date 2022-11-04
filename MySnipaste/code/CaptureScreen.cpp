@@ -8,6 +8,8 @@ CaptureScreen::CaptureScreen(QWidget* parent)
 	m_state(NONE)
 {
 	initWindow();
+	initStretchRect();
+
 }
 
 CaptureScreen::~CaptureScreen()
@@ -21,6 +23,19 @@ void CaptureScreen::initWindow()
 	setWindowState(Qt::WindowActive | Qt::WindowFullScreen);//全屏
 
 	loadBackgroundPixmap();
+}
+
+void CaptureScreen::initStretchRect()
+{
+	m_topLeftStretchRect = QRect(0, 0, 0, 0);
+	m_topRightStretchRect = QRect(0, 0, 0, 0);
+	m_bottomLeftStretchRect = QRect(0, 0, 0, 0);
+	m_bottomRightStretchRect = QRect(0, 0, 0, 0);
+
+	m_leftCenterStretchRect = QRect(0, 0, 0, 0);
+	m_topCenterStretchRect = QRect(0, 0, 0, 0);
+	m_rightCenterStretchRect = QRect(0, 0, 0, 0);
+	m_bottomCenterStretchRect = QRect(0, 0, 0, 0);
 }
 
 void CaptureScreen::loadBackgroundPixmap()
@@ -69,6 +84,49 @@ void CaptureScreen::close()
 
 }
 
+bool CaptureScreen::isTooSmall(QRect rect)
+{
+	//当选择框小于10x10大小时，退出
+	if (rect.width() < 10 || rect.height() < 10)
+	{
+		return true;
+	}
+	return false;
+}
+
+//void CaptureScreen::setSelectStretchRect(QRect rect)
+//{
+//	if (isTooSmall(rect))
+//		return;
+//
+//	int adjust = 5;
+//	QColor color = QColor(0, 174, 255);
+//
+//	QPoint topLeftPos = rect.topLeft();
+//	QPoint topRightPos = rect.topRight();
+//	QPoint bottomLeftPos = rect.bottomLeft();
+//	QPoint bottomRightPos = rect.bottomRight();
+//
+//	m_topLeftStretchRect = QRect(topLeftPos.x() - adjust, topLeftPos.y() - adjust, 10, 10);
+//	m_topRightStretchRect = QRect(topRightPos.x() + adjust, topRightPos.y() - adjust, 10, 10);
+//	m_bottomLeftStretchRect = QRect(bottomLeftPos.x() - adjust, bottomLeftPos.y() + adjust, 10, 10);
+//	m_bottomRightStretchRect = QRect(bottomRightPos.x() + adjust, bottomRightPos.y() + adjust, 10, 10);
+//
+//	m_leftCenterStretchRect = QRect(topLeftPos.x() - adjust, topLeftPos.y() + (rect.height() / 2) - adjust, 10, 10);
+//	m_topCenterStretchRect = QRect(topLeftPos.x() + (rect.width() / 2) - adjust, topLeftPos.y() - adjust, 10, 10);
+//	m_rightCenterStretchRect = QRect(topRightPos.x() - adjust, topRightPos.y() + (rect.height() / 2) - adjust, 10, 10);
+//	m_bottomCenterStretchRect = QRect(bottomLeftPos.x() + (rect.width() / 2) - adjust, topLeftPos.y() - adjust, 10, 10);
+//	
+//	m_painter.fillRect(m_topLeftStretchRect, color);
+//	m_painter.fillRect(m_topRightStretchRect, color);
+//	m_painter.fillRect(m_bottomLeftStretchRect, color);
+//	m_painter.fillRect(m_bottomRightStretchRect, color);
+//	m_painter.fillRect(m_leftCenterStretchRect, color);
+//	m_painter.fillRect(m_topCenterStretchRect, color);
+//	m_painter.fillRect(m_rightCenterStretchRect, color);
+//	m_painter.fillRect(m_bottomCenterStretchRect, color);
+//}
+
 bool CaptureScreen::isPointContains(QPoint curPos)
 {
 	QRect selectedRect = getRect(m_beginPoint, m_endPoint);
@@ -79,27 +137,344 @@ bool CaptureScreen::isPointContains(QPoint curPos)
 	return false;
 }
 
+//CursorStyle CaptureScreen::isStretchPointContains(QPoint curPos)
+//{
+//
+//	QPoint topLeftPos = m_SelectRect.topLeft();
+//	QPoint topRightPos = m_SelectRect.topRight();
+//	QPoint bottomLeftPos = m_SelectRect.bottomLeft();
+//	QPoint bottomRightPos = m_SelectRect.bottomRight();
+//
+//	if (qAbs(curPos.x() - topLeftPos.x()) < 5 && qAbs(curPos.y() - topLeftPos.y()) < 5 )
+//	{
+//		return LDIAGCUR;
+//	}
+//	if (m_topRightStretchRect.contains(curPos))
+//		return RDIAGCUR;
+//	if (m_bottomLeftStretchRect.contains(curPos))
+//		return RDIAGCUR;
+//	if (m_bottomRightStretchRect.contains(curPos))
+//		return LDIAGCUR;
+//
+//	if (m_leftCenterStretchRect.contains(curPos))
+//		return VERCUR;
+//	if (m_topCenterStretchRect.contains(curPos))
+//		return HORCUR;
+//	if (m_rightCenterStretchRect.contains(curPos))
+//		return VERCUR;
+//	if (m_bottomCenterStretchRect.contains(curPos))
+//		return HORCUR;
+//
+//	return NONECUR;
+//}
+
+CursorStyle CaptureScreen::getCursorStyle(QPoint curPos)
+{
+	/*QRect selectedRect = getRect(m_beginPoint, m_endPoint);
+	if (selectedRect.contains(curPos))
+	{
+		return ALLCUR;
+	}*/
+	int adjust = 5;
+
+	QPoint topLeftPos = m_SelectRect.topLeft();
+	QPoint topRightPos = m_SelectRect.topRight();
+	QPoint bottomLeftPos = m_SelectRect.bottomLeft();
+	QPoint bottomRightPos = m_SelectRect.bottomRight();
+
+	QPoint leftCenterPos = QPoint(topLeftPos.x(), topLeftPos.y() + (m_SelectRect.height() / 2));
+	QPoint rightCenterPos = QPoint(topRightPos.x(), topRightPos.y() + (m_SelectRect.height() / 2));
+	QPoint topCenterPos = QPoint(topLeftPos.x() + (m_SelectRect.width() / 2), topLeftPos.y());
+	QPoint bottomCenterPos = QPoint(bottomLeftPos.x() + (m_SelectRect.width() / 2), bottomRightPos.y());
+
+	int width = m_SelectRect.width();
+	int height = m_SelectRect.height();
+
+	QRect selectRect = getRect(QPoint(topLeftPos.x() + adjust, topLeftPos.y() + adjust), QPoint(bottomRightPos.x() + adjust, bottomRightPos.y() + adjust));
+
+	//左对角
+	if (qAbs(curPos.x() - topLeftPos.x()) < adjust && qAbs(curPos.y() - topLeftPos.y()) < adjust)
+	{
+		return LDIAGCUR;
+	}
+	else if (qAbs(curPos.x() - bottomRightPos.x()) < adjust && qAbs(curPos.y() - bottomRightPos.y()) < adjust)
+	{
+		return LDIAGCUR;
+	}
+	//右对角
+	else if (qAbs(curPos.x() - topRightPos.x()) < adjust && qAbs(curPos.y() - topRightPos.y()) < adjust)
+	{
+		return RDIAGCUR;
+	}
+	else if (qAbs(curPos.x() - bottomLeftPos.x()) < adjust && qAbs(curPos.y() - bottomLeftPos.y()) < adjust)
+	{
+		return RDIAGCUR;
+	}
+	//水平
+	else if (qAbs(curPos.x() - leftCenterPos.x()) < adjust && qAbs(curPos.y() - leftCenterPos.y()) < adjust)
+	{
+		return HORCUR;
+	}
+	else if (qAbs(curPos.x() - rightCenterPos.x()) < adjust && qAbs(curPos.y() - rightCenterPos.y()) < adjust)
+	{
+		return HORCUR;
+	}
+	//垂直
+	else if (qAbs(curPos.x() - topCenterPos.x()) < adjust && qAbs(curPos.y() - topCenterPos.y()) < adjust)
+	{
+		return VERCUR;
+	}
+	else if (qAbs(curPos.x() - bottomCenterPos.x()) < adjust && qAbs(curPos.y() - bottomCenterPos.y()) < adjust)
+	{
+		return VERCUR;
+	}
+	else if (selectRect.contains(curPos))
+	{
+		return ALLCUR;
+	}
+	//中心
+	//QRect centerRect = QRect(topLeftPos.x() + 5, topLeftPos.y() + 5, width - 10, height - 10);
+	//QRect selectedRect = getRect(m_beginPoint., m_endPoint);
+	//bool re = centerRect.contains(curPos);
+	
+	return NONECUR;
+}
+
+void CaptureScreen::drawMoveRect(QRect rect)
+{
+	int dx = m_curPressEndPoint.x() - m_curPressBeginPoint.x();
+	int dy = m_curPressEndPoint.y() - m_curPressBeginPoint.y();
+	//qDebug() << "dx :: " << dx << " dy :: " << dy;
+
+	int curBeginX = rect.topLeft().x() + dx;
+	int curBeginY = rect.topLeft().y() + dy;
+	int curEndX = rect.bottomRight().x() + dx;
+	int curEndY = rect.bottomRight().y() + dy;
+	//左上方移动
+	if (dx < 0 && dy < 0)
+	{
+		int press_dx = qAbs(rect.topLeft().x() - m_curPressBeginPoint.x());
+		int press_dy = qAbs(rect.topLeft().y() - m_curPressBeginPoint.y());
+		//边界情况
+		if ((press_dx + qAbs(dx)) >= m_curPressBeginPoint.x())
+		{
+			curBeginX = 0;
+			curEndX = rect.width();
+
+		}
+		if ((press_dy + qAbs(dy)) >= m_curPressBeginPoint.y())
+		{
+			curBeginY = 0;
+			curEndY = rect.height();
+		}
+	}
+	//左下方移动
+	else if (dx < 0 && dy > 0)
+	{
+		int press_dx = qAbs(rect.topLeft().x() - m_curPressBeginPoint.x());
+		int press_dy = qAbs(rect.bottomRight().y() - m_curPressBeginPoint.y());
+		//边界情况
+		if ((press_dx + qAbs(dx)) >= m_curPressBeginPoint.x())
+		{
+			curBeginX = 0;
+			curEndX = rect.width();
+		}
+		if ((press_dy + qAbs(dy) + m_curPressBeginPoint.y()) >= m_screenheight)
+		{
+			curEndY = m_screenheight;
+			curBeginY = m_screenheight - rect.height();
+		}
+	}
+	//右下方移动
+	else if (dx > 0 && dy > 0)
+	{
+		int press_dx = qAbs(rect.bottomRight().x() - m_curPressBeginPoint.x());
+		int press_dy = qAbs(rect.bottomRight().y() - m_curPressBeginPoint.y());
+
+		//边界情况
+		if ((press_dx + qAbs(dx) + m_curPressBeginPoint.x()) >= m_screenwidth)
+		{
+			curEndX = m_screenwidth;
+			curBeginX = m_screenwidth - rect.width();
+		}
+		if ((press_dy + qAbs(dy) + m_curPressBeginPoint.y()) >= m_screenheight)
+		{
+			curEndY = m_screenheight;
+			curBeginY = m_screenheight - rect.height();
+		}
+	}
+	//右上方移动
+	else if (dx > 0 && dy < 0)
+	{
+		int press_dx = qAbs(rect.bottomRight().x() - m_curPressBeginPoint.x());
+		int press_dy = qAbs(rect.bottomRight().y() - m_curPressBeginPoint.y());
+
+		//边界情况
+		if ((press_dx + qAbs(dx) + m_curPressBeginPoint.x()) >= m_screenwidth)
+		{
+			curEndX = m_screenwidth;
+			curBeginX = m_screenwidth - rect.width();
+		}
+		if ((press_dy + qAbs(dy)) >= m_curPressBeginPoint.y())
+		{
+			curBeginY = 0;
+			curEndY = rect.height();
+		}
+	}
+	m_beginPoint.setX(curBeginX);
+	m_beginPoint.setY(curBeginY);
+	m_endPoint.setX(curEndX);
+	m_endPoint.setY(curEndY);
+}
+
+void CaptureScreen::drawinitStretchRect(QRect rect)
+{
+	if (isTooSmall(rect))
+		return;
+
+	int adjust = 5;
+	QColor color = QColor(0, 174, 255);
+
+	QPoint topLeftPos = rect.topLeft();
+	QPoint topRightPos = rect.topRight();
+	QPoint bottomLeftPos = rect.bottomLeft();
+	QPoint bottomRightPos = rect.bottomRight();
+
+	m_topLeftStretchRect = QRect(topLeftPos.x() - adjust, topLeftPos.y() - adjust, 10, 10);
+	m_topRightStretchRect = QRect(topRightPos.x() - adjust, topRightPos.y() - adjust, 10, 10);
+	m_bottomLeftStretchRect = QRect(bottomLeftPos.x() - adjust, bottomLeftPos.y() - adjust, 10, 10);
+	m_bottomRightStretchRect = QRect(bottomRightPos.x() - adjust, bottomRightPos.y() - adjust, 10, 10);
+
+	m_leftCenterStretchRect = QRect(topLeftPos.x() - adjust, topLeftPos.y() + (rect.height() / 2) - adjust, 10, 10);
+	m_topCenterStretchRect = QRect(topLeftPos.x() + (rect.width() / 2) - adjust, topLeftPos.y() - adjust, 10, 10);
+	m_rightCenterStretchRect = QRect(bottomRightPos.x() - adjust, bottomRightPos.y() - (rect.height() / 2) - adjust, 10, 10);
+	m_bottomCenterStretchRect = QRect(bottomLeftPos.x() + (rect.width() / 2) - adjust, bottomLeftPos.y() - adjust, 10, 10);
+
+	m_painter.fillRect(m_topLeftStretchRect, color);
+	m_painter.fillRect(m_topRightStretchRect, color);
+	m_painter.fillRect(m_bottomLeftStretchRect, color);
+	m_painter.fillRect(m_bottomRightStretchRect, color);
+	m_painter.fillRect(m_leftCenterStretchRect, color);
+	m_painter.fillRect(m_topCenterStretchRect, color);
+	m_painter.fillRect(m_rightCenterStretchRect, color);
+	m_painter.fillRect(m_bottomCenterStretchRect, color);
+}
+
+void CaptureScreen::drawStretchRect(QRect rect)
+{
+	qDebug() << "stretch rect :: " << rect;
+	QPoint topLeftPos = rect.topLeft();
+	QPoint topRightPos = rect.topRight();
+	QPoint bottomLeftPos = rect.bottomLeft();
+	QPoint bottomRightPos = rect.bottomRight();
+
+	int dy = m_curPressEndPoint.y() - m_curPressBeginPoint.y();
+	int dx = m_curPressEndPoint.x() - m_curPressBeginPoint.x();
+
+	//当垂直方向拉伸
+	if (m_cursorStyle == VERCUR)
+	{
+		//向上拉伸
+		if (qAbs(m_curPressBeginPoint.y() - topLeftPos.y()) < 5)
+		{
+			m_beginPoint.setY(topLeftPos.y() + dy);
+		}
+		//向下拉伸
+		else if (qAbs(m_curPressBeginPoint.y() - bottomRightPos.y()) < 5)
+		{
+			m_endPoint.setY(bottomRightPos.y() + dy);
+
+		}
+	}
+	//当水平方向拉伸
+	else if (m_cursorStyle == HORCUR)
+	{
+		//向左拉伸
+		if (qAbs(m_curPressBeginPoint.x() - topLeftPos.x()) < 5)
+		{
+			m_beginPoint.setX(topLeftPos.x() + dx);
+		}
+		//向右拉伸
+		else if (qAbs(m_curPressBeginPoint.x() - bottomRightPos.x()) < 5)
+		{
+			m_endPoint.setX(bottomRightPos.x() + dx);
+		}
+	}
+	//当左下角和右上角对角方向拉伸
+	else if (m_cursorStyle == RDIAGCUR)
+	{
+		//向左下拉伸
+		if (qAbs(m_curPressBeginPoint.x() - bottomLeftPos.x()) < 5 || 
+			qAbs(m_curPressBeginPoint.y() - bottomLeftPos.y()) < 5)
+		{
+			m_beginPoint.setX(topLeftPos.x() + dx);
+			m_endPoint.setY(bottomRightPos.y() + dy);
+		}
+		//向右上拉伸
+		else if (qAbs(m_curPressBeginPoint.x() - topRightPos.x()) < 5 ||
+				 qAbs(m_curPressBeginPoint.y() - topRightPos.y()) < 5)
+		{
+			m_beginPoint.setY(topLeftPos.y() + dy);
+			m_endPoint.setX(bottomRightPos.x() + dx);
+		}
+	}
+	//当左上角和右下角对角方向拉伸
+	else if (m_cursorStyle == LDIAGCUR)
+	{
+		//向左上拉伸
+		if (qAbs(m_curPressBeginPoint.x() - topLeftPos.x()) < 5 ||
+			qAbs(m_curPressBeginPoint.y() - topLeftPos.y()) < 5)
+		{
+			m_beginPoint.setX(topLeftPos.x() + dx);
+			m_beginPoint.setY(topLeftPos.y() + dy);
+		}
+		//向右下拉伸
+		else if (qAbs(m_curPressBeginPoint.x() - bottomRightPos.x()) < 5 ||
+				 qAbs(m_curPressBeginPoint.y() - bottomRightPos.y()) < 5)
+		{
+			m_endPoint.setY(bottomRightPos.y() + dy);
+			m_endPoint.setX(bottomRightPos.x() + dx);
+		}
+	}
+}
+
 void CaptureScreen::mousePressEvent(QMouseEvent * event)
 {
 	qDebug() << "********** mousePressEvent ***********";
 	if (event->button() == Qt::LeftButton)
 	{
-		if (isPointContains(event->pos()))
+		//if (isPointContains(event->pos()))
+		//{
+		//	m_curPressBeginPoint = event->pos();
+		//	m_curPressEndPoint = event->pos();
+		//	m_state = MOVE;
+		//}
+		//else {
+		//	m_beginPoint = event->pos();//记录当前位置
+		//}
+		//当为移动目标时
+		if (m_cursorStyle == ALLCUR)
 		{
-			m_moveBeginPoint = event->pos();
-			m_moveEndPoint = event->pos();
+			m_curPressBeginPoint = event->pos();
+			m_curPressEndPoint = event->pos();
 			m_state = MOVE;
-
-			//qDebug() << "event->pos() :: " << event->pos();
-			//qDebug() << "event->globalPos() :: " << event->globalPos();
-			qDebug() << "m_moveBeginPoint  :: " << m_moveBeginPoint;
-
+		}
+		else if (m_cursorStyle == VERCUR || 
+				 m_cursorStyle == HORCUR || 
+				 m_cursorStyle == RDIAGCUR || 
+				 m_cursorStyle == LDIAGCUR
+				)
+		{
+			m_curPressBeginPoint = event->pos();
+			m_curPressEndPoint = event->pos();
+			m_state = STRETCH;
 		}
 		else {
 			m_beginPoint = event->pos();//记录当前位置
 		}
+
+
 		m_isPressed = true;
-		qDebug() << "m_beginPoint :: " << m_beginPoint;
 	}
 	return QWidget::mousePressEvent(event);
 }
@@ -117,27 +492,44 @@ void CaptureScreen::mouseMoveEvent(QMouseEvent * event)
 	else if (m_isPressed && m_state == MOVE)
 	{
 		/*QPoint curPos = event->pos();
-		m_moveEndPoint = curPos;*/
-		m_moveEndPoint = event->pos();
-		qDebug() << "$$$$$$$$$$$$$$$$$$$$$$$$$$$";
-		qDebug() << "event->pos() :: " << event->pos();
-		qDebug() << "m_moveEndPoint :: " << m_moveEndPoint;
-
-		//qDebug() << "****************************************";
-		//qDebug() << "event->pos() :: " << event->pos();
-		//qDebug() << "event->globalPos() :: " << event->globalPos();
-		//qDebug() << "m_moveEndPoint :: " << m_moveEndPoint;
+		m_curPressEndPoint = curPos;*/
+		m_curPressEndPoint = event->pos();
 		update();
 	}
+	//当鼠标移动时,设置鼠标样式
 	else if (m_state == NONE)
 	{
-		if (isPointContains(event->pos()))
+		CursorStyle style = getCursorStyle(event->pos());
+		m_cursorStyle = style;
+		if (style == ALLCUR)
 		{
 			this->setCursor(Qt::SizeAllCursor);
+		}
+		else if (style == VERCUR)
+		{
+			this->setCursor(Qt::SizeVerCursor);
+		}
+		else if (style == HORCUR)
+		{
+			this->setCursor(Qt::SizeHorCursor);
+		}
+		else if (style == RDIAGCUR)
+		{
+			this->setCursor(Qt::SizeBDiagCursor);
+		}
+		else if (style == LDIAGCUR)
+		{
+			this->setCursor(Qt::SizeFDiagCursor);
 		}
 		else {
 			this->setCursor(Qt::ArrowCursor);
 		}
+	}
+	//当拉伸大小时
+	else if (m_isPressed && m_state == STRETCH)
+	{
+		m_curPressEndPoint = event->pos();;
+		update();
 	}
 	return QWidget::mouseMoveEvent(event);
 }
@@ -148,23 +540,16 @@ void CaptureScreen::mouseReleaseEvent(QMouseEvent * event)
 	if (m_state == NONE)
 	{
 		m_endPoint = event->pos();
-		m_isPressed = false;
-		qDebug() << "mouseReleaseEvent  m_beginPoint :: " << m_beginPoint;
-		qDebug() << "mouseReleaseEvent  m_endPoint :: " << m_endPoint;
 		
 	}
-	else if (m_state == MOVE)
+	else if (m_state == MOVE || m_state == STRETCH)
 	{
-		m_moveEndPoint = event->pos();
-		//qDebug() << "m_moveEndPoint :: " << m_moveEndPoint;
-		//qDebug() << "m_endPoint :: " << m_endPoint;
-
-		m_isPressed = false;
-		m_state = NONE;
+		m_curPressEndPoint = event->pos();
 	}
-	//m_initBeginPoint = m_beginPoint;
-	//m_initEndPoint = m_endPoint;
-	m_moveSelectRect = getRect(m_beginPoint, m_endPoint);
+	m_initSelectRect = getRect(m_beginPoint, m_endPoint);
+	//setSelectStretchRect(m_SelectRect);
+	m_state = NONE;
+	m_isPressed = false;
 
 	return QWidget::mouseReleaseEvent(event);
 }
@@ -183,8 +568,9 @@ void CaptureScreen::keyPressEvent(QKeyEvent * event)
 	}
 }
 
-void CaptureScreen::paintEvent(QPaintEvent * painter)
+void CaptureScreen::paintEvent(QPaintEvent * event)
 {
+	Q_UNUSED(event);
 	//重绘
 	m_painter.begin(this);
 	m_painter.setPen(QPen(Qt::blue, 1, Qt::SolidLine, Qt::FlatCap));	//设置画笔
@@ -192,130 +578,29 @@ void CaptureScreen::paintEvent(QPaintEvent * painter)
 	QColor shadowColor = QColor(255, 255, 255, 100);
 	m_painter.fillRect(m_screenPixmap.rect(), shadowColor);//填充阴影
 
-	//if (m_isPressed && m_state == NONE)
-	//{
-	//	QRect selectedRect = getRect(m_beginPoint, m_endPoint);
-	//	m_capturePixmap = m_screenPixmap.copy(selectedRect);
-	//	m_painter.drawPixmap(selectedRect.topLeft(), m_capturePixmap);
-	//	m_painter.drawRect(selectedRect);
-	//}
+
+	//移动时
 	if (m_isPressed && m_state == MOVE)
 	{
-		int dx = m_moveEndPoint.x() - m_moveBeginPoint.x();
-		int dy = m_moveEndPoint.y() - m_moveBeginPoint.y();
-		//qDebug() << "dx :: " << dx << " dy :: " << dy;
-
-		int curBeginX = m_moveSelectRect.topLeft().x() + dx;
-		int curBeginY = m_moveSelectRect.topLeft().y() + dy;
-		int curEndX = m_moveSelectRect.bottomRight().x() + dx;
-		int curEndY = m_moveSelectRect.bottomRight().y() + dy;
-		//左上方移动
-		if (dx < 0 && dy < 0)
-		{
-			int press_dx = qAbs(m_moveSelectRect.topLeft().x() - m_moveBeginPoint.x());
-			int press_dy = qAbs(m_moveSelectRect.topLeft().y() - m_moveBeginPoint.y());
-			//边界情况
-			if ((press_dx + qAbs(dx)) >= m_moveBeginPoint.x())
-			{
-				curBeginX = 0;
-				curEndX = m_moveSelectRect.width();
-
-			}
-			if ((press_dy + qAbs(dy)) >= m_moveBeginPoint.y())
-			{
-				curBeginY = 0;
-				curEndY = m_moveSelectRect.height();
-			}
-		}
-		//左下方移动
-		else if (dx < 0 && dy > 0)
-		{
-			int press_dx = qAbs(m_moveSelectRect.topLeft().x() - m_moveBeginPoint.x());
-			int press_dy = qAbs(m_moveSelectRect.bottomRight().y() - m_moveBeginPoint.y());
-			//边界情况
-			if ((press_dx + qAbs(dx)) >= m_moveBeginPoint.x())
-			{
-				curBeginX = 0;
-				curEndX = m_moveSelectRect.width();
-			}
-			if ((press_dy + qAbs(dy) + m_moveBeginPoint.y()) >= m_screenheight)
-			{
-				curEndY = m_screenheight;
-				curBeginY = m_screenheight - m_moveSelectRect.height();
-			}
-		}
-		//右下方移动
-		else if (dx > 0 && dy > 0)
-		{
-			int press_dx = qAbs(m_moveSelectRect.bottomRight().x() - m_moveBeginPoint.x());
-			int press_dy = qAbs(m_moveSelectRect.bottomRight().y() - m_moveBeginPoint.y());
-
-			//边界情况
-			if ((press_dx + qAbs(dx) + m_moveBeginPoint.x()) >= m_screenwidth)
-			{
-				curEndX = m_screenwidth;
-				curBeginX = m_screenwidth - m_moveSelectRect.width();
-			}
-			if ((press_dy + qAbs(dy) + m_moveBeginPoint.y()) >= m_screenheight)
-			{
-				curEndY = m_screenheight;
-				curBeginY = m_screenheight - m_moveSelectRect.height();
-			}
-		}
-		//右上方移动
-		else if (dx > 0 && dy < 0)
-		{
-			int press_dx = qAbs(m_moveSelectRect.bottomRight().x() - m_moveBeginPoint.x());
-			int press_dy = qAbs(m_moveSelectRect.bottomRight().y() - m_moveBeginPoint.y());
-
-			//边界情况
-			if ((press_dx + qAbs(dx) + m_moveBeginPoint.x()) >= m_screenwidth)
-			{
-				curEndX = m_screenwidth;
-				curBeginX = m_screenwidth - m_moveSelectRect.width();
-			}
-			if ((press_dy + qAbs(dy)) >= m_moveBeginPoint.y())
-			{
-				curBeginY = 0;
-				curEndY = m_moveSelectRect.height();
-			}
-		}
-		m_beginPoint.setX(curBeginX);
-		m_beginPoint.setY(curBeginY);
-		m_endPoint.setX(curEndX);
-		m_endPoint.setY(curEndY);
-		QPoint tempBegin, tempEnd;
-		tempBegin.setX(curBeginX);
-		tempBegin.setY(curBeginY);
-		tempEnd.setX(curEndX);
-		tempEnd.setY(curEndY);
-		m_beginPoint = tempBegin;
-		m_endPoint = tempEnd;
-		QRect tempSelectRect = getRect(tempBegin, tempEnd);
-
-		qDebug() << "****************************************";
-		qDebug() << "moved dx :: " << dx;
-		qDebug() << "moved dy :: " << dy;
-
-		qDebug() << "moved m_moveBeginPoint :: " << m_moveBeginPoint;
-		qDebug() << "moved m_moveEndPoint :: " << m_moveEndPoint;
-		qDebug() << "moved 后 tempBegin :: " << tempBegin;
-		qDebug() << "moved 后 tempEnd :: " << tempEnd;
-		qDebug() << "moved tempSelectRect  :: " << tempSelectRect;
-		qDebug() << "moved m_beginPoint  :: " << m_beginPoint;
-		qDebug() << "moved m_endPoint  :: " << m_endPoint;
-
+		//画移动的截图框
+		drawMoveRect(m_initSelectRect);
+	}
+	//拉伸时
+	else if (m_isPressed && m_state == STRETCH)
+	{
+		drawStretchRect(m_initSelectRect);
 	}
 
-	//qDebug() << "paintEvent  m_beginPoint :: " << m_beginPoint;
-	//qDebug() << "paintEvent  m_endPoint :: " << m_endPoint;
-
 	QRect selectedRect = getRect(m_beginPoint, m_endPoint);
+	m_SelectRect = selectedRect;
 	qDebug() << "selectedRect  :: " << selectedRect;
 
 	m_capturePixmap = m_screenPixmap.copy(selectedRect);
 	m_painter.drawPixmap(selectedRect.topLeft(), m_capturePixmap);
 	m_painter.drawRect(selectedRect);
+
+	//初始化截图框边界的拉伸小框
+	drawinitStretchRect(selectedRect);
 
 	m_painter.end();
 }

@@ -7,6 +7,11 @@ MySnipaste::MySnipaste(QWidget *parent)
 {
     ui.setupUi(this);
 
+
+	//ui.label_tip->setText(QStringLiteral("回车键（Enter）确定\n"));
+	this->statusBar()->setStyleSheet("QStatusBar::item{border: 0px}");
+	//this->statusBar->setToolTip(QStringLiteral("回车键（Enter）确定截图"));
+	this->statusBar()->addPermanentWidget(new QLabel("回车键（Enter）确定截图"));//设置statusBar永久提示部件
 	//QMetaObject::connectSlotsByName(this);
 	//capScn = new CaptureScreen();
 	connect(ui.pushButton, &QPushButton::clicked, this, &MySnipaste::onStart);
@@ -26,15 +31,6 @@ MySnipaste::~MySnipaste()
 
 void MySnipaste::onStart()
 {
-	//if (capDlg)
-	//{
-	//	capDlg->show();
-	//}
-	//else {
-	//	capDlg = new CaptureDlg(this);
-
-	//	capDlg->show();
-	//}
 	if (capScn)
 	{
 		capScn->show();
@@ -42,6 +38,8 @@ void MySnipaste::onStart()
 	else {
 		capScn = new CaptureScreen();
 		connect(capScn, &CaptureScreen::signalFinishedCapture, this, &MySnipaste::onRecvCapture);
+		connect(capScn, &CaptureScreen::signalScreenQuit, this, &MySnipaste::onRecvQuitCapture);
+
 		capScn->show();
 	}
 
@@ -50,9 +48,17 @@ void MySnipaste::onStart()
 void MySnipaste::onRecvCapture(QPixmap capmap)
 {
 	capmap.scaled(ui.label->size(), Qt::KeepAspectRatio);
-	ui.label->setScaledContents(true);
+	ui.label->setScaledContents(true);//铺满label
 	ui.label->setPixmap(capmap);
-	capScn->hide();
+	//capScn->hide();
+	disconnect(capScn, &CaptureScreen::signalFinishedCapture, this, &MySnipaste::onRecvCapture);
+	delete capScn;
+	capScn = nullptr;
+}
+
+void MySnipaste::onRecvQuitCapture()
+{
+	//capScn->hide();
 	disconnect(capScn, &CaptureScreen::signalFinishedCapture, this, &MySnipaste::onRecvCapture);
 	delete capScn;
 	capScn = nullptr;

@@ -45,6 +45,19 @@
           <string>截图</string>
          </property>
         </widget>
+        <widget class="QLabel" name="label_tip">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>440</y>
+           <width>121</width>
+           <height>51</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+        </widget>
        </widget>
       </item>
      </layout>

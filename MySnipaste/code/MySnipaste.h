@@ -17,6 +17,7 @@ public:
 //public slots:
 	void onStart();
 	void onRecvCapture(QPixmap capmap);
+	void onRecvQuitCapture();
 private:
     Ui::MySnipasteClass ui;
 
