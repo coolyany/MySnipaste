@@ -242,6 +242,8 @@ CursorStyle CaptureScreen::getCursorStyle(QPoint curPos)
 
 void CaptureScreen::drawMoveRect(QRect rect)
 {
+	int adjust = 5;
+
 	int dx = m_curPressEndPoint.x() - m_curPressBeginPoint.x();
 	int dy = m_curPressEndPoint.y() - m_curPressBeginPoint.y();
 	//qDebug() << "dx :: " << dx << " dy :: " << dy;
@@ -256,13 +258,13 @@ void CaptureScreen::drawMoveRect(QRect rect)
 		int press_dx = qAbs(rect.topLeft().x() - m_curPressBeginPoint.x());
 		int press_dy = qAbs(rect.topLeft().y() - m_curPressBeginPoint.y());
 		//边界情况
-		if ((press_dx + qAbs(dx)) >= m_curPressBeginPoint.x())
+		if ((press_dx + qAbs(dx)) > m_curPressBeginPoint.x() + adjust)
 		{
 			curBeginX = 0;
 			curEndX = rect.width();
 
 		}
-		if ((press_dy + qAbs(dy)) >= m_curPressBeginPoint.y())
+		if ((press_dy + qAbs(dy)) > m_curPressBeginPoint.y() + adjust)
 		{
 			curBeginY = 0;
 			curEndY = rect.height();
@@ -274,12 +276,12 @@ void CaptureScreen::drawMoveRect(QRect rect)
 		int press_dx = qAbs(rect.topLeft().x() - m_curPressBeginPoint.x());
 		int press_dy = qAbs(rect.bottomRight().y() - m_curPressBeginPoint.y());
 		//边界情况
-		if ((press_dx + qAbs(dx)) >= m_curPressBeginPoint.x())
+		if ((press_dx + qAbs(dx)) > m_curPressBeginPoint.x() + adjust)
 		{
 			curBeginX = 0;
 			curEndX = rect.width();
 		}
-		if ((press_dy + qAbs(dy) + m_curPressBeginPoint.y()) >= m_screenheight)
+		if ((press_dy + qAbs(dy) + m_curPressBeginPoint.y()) > m_screenheight + adjust)
 		{
 			curEndY = m_screenheight;
 			curBeginY = m_screenheight - rect.height();
@@ -292,12 +294,12 @@ void CaptureScreen::drawMoveRect(QRect rect)
 		int press_dy = qAbs(rect.bottomRight().y() - m_curPressBeginPoint.y());
 
 		//边界情况
-		if ((press_dx + qAbs(dx) + m_curPressBeginPoint.x()) >= m_screenwidth)
+		if ((press_dx + qAbs(dx) + m_curPressBeginPoint.x()) > m_screenwidth + adjust)
 		{
 			curEndX = m_screenwidth;
 			curBeginX = m_screenwidth - rect.width();
 		}
-		if ((press_dy + qAbs(dy) + m_curPressBeginPoint.y()) >= m_screenheight)
+		if ((press_dy + qAbs(dy) + m_curPressBeginPoint.y()) > m_screenheight + adjust)
 		{
 			curEndY = m_screenheight;
 			curBeginY = m_screenheight - rect.height();
@@ -309,13 +311,14 @@ void CaptureScreen::drawMoveRect(QRect rect)
 		int press_dx = qAbs(rect.bottomRight().x() - m_curPressBeginPoint.x());
 		int press_dy = qAbs(rect.bottomRight().y() - m_curPressBeginPoint.y());
 
-		//边界情况
-		if ((press_dx + qAbs(dx) + m_curPressBeginPoint.x()) >= m_screenwidth)
+		//右边界
+		if ((press_dx + qAbs(dx) + m_curPressBeginPoint.x()) > (m_screenwidth + adjust))
 		{
 			curEndX = m_screenwidth;
 			curBeginX = m_screenwidth - rect.width();
 		}
-		if ((press_dy + qAbs(dy)) >= m_curPressBeginPoint.y())
+		//上边界
+		if ((press_dy + qAbs(dy)) > (m_curPressBeginPoint.y() + adjust))
 		{
 			curBeginY = 0;
 			curEndY = rect.height();
@@ -547,6 +550,7 @@ void CaptureScreen::mouseReleaseEvent(QMouseEvent * event)
 		m_curPressEndPoint = event->pos();
 	}
 	m_initSelectRect = getRect(m_beginPoint, m_endPoint);
+
 	//setSelectStretchRect(m_SelectRect);
 	m_state = NONE;
 	m_isPressed = false;
@@ -575,7 +579,7 @@ void CaptureScreen::paintEvent(QPaintEvent * event)
 	m_painter.begin(this);
 	m_painter.setPen(QPen(Qt::blue, 1, Qt::SolidLine, Qt::FlatCap));	//设置画笔
 	m_painter.drawPixmap(0, 0, m_screenPixmap);
-	QColor shadowColor = QColor(255, 255, 255, 100);
+	QColor shadowColor = QColor(0, 0, 0, 100);
 	m_painter.fillRect(m_screenPixmap.rect(), shadowColor);//填充阴影
 
 
