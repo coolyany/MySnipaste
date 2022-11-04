@@ -1,0 +1,2 @@
+# MySnipaste
+A screenshot widget
