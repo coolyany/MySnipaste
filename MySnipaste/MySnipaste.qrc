@@ -1,4 +1,5 @@
 <RCC>
-    <qresource prefix="MySnipaste">
+    <qresource prefix="/MySnipaste">
+        <file>resource/title.png</file>
     </qresource>
 </RCC>
